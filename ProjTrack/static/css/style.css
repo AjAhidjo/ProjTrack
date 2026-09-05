@@ -1,0 +1,181 @@
+/* --- Global Variables --- */
+:root {
+    --primary: #1e293b;
+    --accent: #3b82f6;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg: #f1f5f9;
+    --white: #ffffff;
+    --border: #e2e8f0;
+    --chat-sent: #dcf8c6;
+}
+
+/* --- Base Layout --- */
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg);
+    margin: 0;
+    color: var(--primary);
+    padding-top: 90px;
+    line-height: 1.6;
+}
+
+/* --- Navigation --- */
+nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    background: var(--primary);
+    padding: 0 5%;
+    height: 70px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--white);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+nav span { font-weight: 700; color: white !important; }
+
+/* --- Chat Specific Fixed Styles --- */
+.message {
+    max-width: 75%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    position: relative; /* Crucial for icon positioning */
+    line-height: 1.4;
+    margin-bottom: 5px;
+}
+
+.sent {
+    align-self: flex-end;
+    background: var(--chat-sent);
+    border-bottom-right-radius: 2px;
+}
+
+.received {
+    align-self: flex-start;
+    background: white;
+    border-bottom-left-radius: 2px;
+}
+
+/* FIXED: Hover Actions Logic */
+.msg-actions {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    top: -30px; /* Positioned slightly higher */
+    right: 0;
+    background: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    display: flex;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 100;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* This "bridge" prevents the icons from disappearing when moving the mouse up */
+.sent::after {
+    content: "";
+    position: absolute;
+    top: -15px;
+    right: 0;
+    width: 80px;
+    height: 20px;
+}
+
+.sent:hover .msg-actions {
+    visibility: visible;
+    opacity: 1;
+}
+
+.action-icon {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #64748b;
+    transition: transform 0.1s;
+}
+
+.action-icon:hover {
+    transform: scale(1.2);
+    color: var(--primary);
+}
+
+.delete-btn:hover {
+    color: var(--danger) !important;
+}
+
+/* --- Edit Mode UI --- */
+#edit-mode-bar {
+    display: none;
+    background: #fff3cd;
+    border-top: 1px solid #ffeeba;
+    padding: 10px 25px;
+    font-size: 0.85rem;
+    color: #856404;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- Generic UI Elements --- */
+.card {
+    background: var(--white);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    margin-bottom: 30px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
+button[type="submit"], .btn-logout {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.btn-logout { background: var(--danger); }
+
+/* --- Table & Status --- */
+.status-pill {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.approved { background: #d1fae5; color: #065f46; }
+.under-review { background: #dbeafe; color: #1e40af; }
+.correction-needed { background: #fee2e2; color: #991b1b; }
+
+.badge {
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    margin-left: 5px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    body { padding-top: 130px; }
+    nav { flex-direction: column; height: auto; padding: 10px; }
+}

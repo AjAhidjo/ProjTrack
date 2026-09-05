@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Student Registration | ProjTrack</title>
+    <style>
+        form label { display: block; width: 100%; margin-top: 15px; font-weight: 600; font-size: 0.85rem; color: #1e293b; }
+        form input { display: block; width: 100%; box-sizing: border-box; margin-top: 5px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .show-pass-container { display: flex; align-items: center; margin: 15px 0 20px 0; cursor: pointer; user-select: none; }
+        .tiny-box { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-radius: 3px; background: white; margin-right: 8px; display: flex; align-items: center; justify-content: center; transition: 0.2s; flex-shrink: 0; }
+        #showPassCheck { display: none; }
+        #showPassCheck:checked + .tiny-box { background: #3b82f6; border-color: #3b82f6; }
+        #showPassCheck:checked + .tiny-box::after { content: '✔'; color: white; font-size: 10px; }
+        .show-pass-text { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+    </style>
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f1f5f9; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 450px; border-top: 5px solid #3b82f6;">
+        <h2 style="text-align: center; color: #1e293b; margin-bottom: 5px;">STUDENT SIGNUP</h2>
+        <p style="text-align: center; color: #64748b; font-size: 0.85rem; margin-bottom: 25px;">Create your student project account</p>
+
+        {% with msgs = get_flashed_messages(with_categories=true) %}
+            {% for category, m in msgs %}
+                <div class="card flash-msg" style="background: {% if category == 'success' %}#d1fae5{% else %}#fee2e2{% endif %}; color: {% if category == 'success' %}#065f46{% else %}#991b1b{% endif %}; padding:15px; border-radius:8px; margin-bottom:20px; border-left: 5px solid {% if category == 'success' %}#10b981{% else %}#ef4444{% endif %};">
+                    {{ m }}
+                </div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="role" value="student">
+            <label style="margin-top: 0;">Full Name</label>
+            <input type="text" name="full_name" placeholder="Enter your full name" required>
+            <label>Email Address</label>
+            <input type="email" name="email" placeholder="student@example.com" required>
+            <label>Matric No / Username</label>
+            <input type="text" name="username" placeholder="Enter ID" required>
+            <label>Password</label>
+            <input type="password" name="password" id="pass1" placeholder="Create password" required>
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" id="pass2" placeholder="Repeat password" required>
+
+            <label class="show-pass-container">
+                <input type="checkbox" id="showPassCheck" onclick="togglePasswords()">
+                <div class="tiny-box"></div>
+                <span class="show-pass-text">Show Password</span>
+            </label>
+
+            <button type="submit" style="width: 100%; margin-top: 10px; background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">Register as Student</button>
+        </form>
+        <p style="text-align: center; margin-top: 20px; font-size: 0.9rem;">
+            Already have an account? <a href="/login/student" style="color: #3b82f6; text-decoration: none; font-weight: 600;">Login</a>
+        </p>
+    </div>
+    <script>
+        function togglePasswords() {
+            var p1 = document.getElementById("pass1"); var p2 = document.getElementById("pass2");
+            var check = document.getElementById("showPassCheck");
+            var type = check.checked ? "text" : "password";
+            p1.type = type; p2.type = type;
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

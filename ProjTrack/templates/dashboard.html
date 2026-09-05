@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>ProjTrack | Dashboard</title>
+    <style>
+        .notification-container { position: relative; display: inline-block; }
+        .badge {
+            position: absolute; top: -5px; right: -10px;
+            background-color: #ef4444; color: white; border-radius: 50%;
+            padding: 2px 6px; font-size: 0.7rem; font-weight: bold;
+            border: 2px solid white; min-width: 18px; text-align: center;
+        }
+        .action-flex { display: flex; gap: 10px; align-items: center; }
+        .compact-input { padding: 5px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; width: 150px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span style="font-weight: bold; letter-spacing: 1px;">PROJTRACK SYSTEM</span>
+        <div>
+            <span style="margin-right:20px; font-size:0.9rem;">{{ current_user.full_name }} ({{ current_user.role|capitalize }})</span>
+            <a href="{{ url_for('change_password') }}" style="margin-right:15px; color: #cbd5e1; text-decoration: none; font-size: 0.85rem;">Change Password</a>
+            <a href="{{ url_for('logout') }}" class="btn-logout">Sign Out</a>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        {% with msgs = get_flashed_messages(with_categories=true) %}
+            {% if msgs %}
+                {% for category, m in msgs %}
+                    <div class="card flash-msg" style="background: {% if category == 'success' %}#d1fae5{% else %}#fee2e2{% endif %}; color: {% if category == 'success' %}#065f46{% else %}#991b1b{% endif %}; padding:15px; border-radius:8px; margin-bottom:20px; border-left: 5px solid {% if category == 'success' %}#10b981{% else %}#ef4444{% endif %};">
+                        {{ m }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if current_user.role == 'student' %}
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;" class="assign-form">
+            <div class="card" style="background: var(--primary); color: white;">
+                <h3 style="border-color: rgba(255,255,255,0.1); color: white;">🎓 Your Project Progress</h3>
+                <div style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+                        <span>Completion Rate</span>
+                        <span>{{ progress }}%</span>
+                    </div>
+                    <div style="width: 100%; background: rgba(255,255,255,0.1); height: 12px; border-radius: 10px; overflow: hidden;">
+                        <div style="width: {{ progress }}%; background: var(--success); height: 100%; transition: width 0.5s ease;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="text-align: center;">
+                <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">👨‍🏫 My Supervisor</h3>
+                    {% if supervisor %}
+                    <div class="notification-container">
+                        <a href="{{ url_for('chat') }}" title="Message Supervisor" style="text-decoration: none; font-size: 1.4rem;">💬</a>
+                        <span id="notification-badge" class="badge" style="display: {% if unread_count > 0 %}block{% else %}none{% endif %};">
+                            {{ unread_count if unread_count <= 99 else '99+' }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if supervisor %}
+                    <p style="font-weight: bold; color: var(--accent); margin-bottom: 5px;">{{ supervisor.full_name }}</p>
+                    <small style="color: #64748b;">{{ supervisor.email or 'No email provided' }}</small>
+                {% else %}
+                    <p style="color: var(--danger); font-size: 0.85rem;">No Supervisor Assigned Yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🚀 Submit Project Work</h3>
+            <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" class="assign-form" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: center;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="title" placeholder="Research Topic" required>
+                <select name="chapter" required>
+                    <option value="" disabled selected>Select Chapter</option>
+                    <option value="Chapter 1">Chapter 1: Introduction</option>
+                    <option value="Chapter 2">Chapter 2: Literature Review</option>
+                    <option value="Chapter 3">Chapter 3: Methodology</option>
+                    <option value="Chapter 4">Chapter 4: Implementation</option>
+                    <option value="Chapter 5">Chapter 5: Conclusion</option>
+                    <option value="Final Project">Final Full Project Document</option>
+                </select>
+                <div>
+                    <input type="file" name="file" accept=".pdf" required>
+                    <small style="color: #64748b; display: block; margin-top: 5px;">Note: Use <b>PDF</b> for instant viewing.</small>
+                </div>
+                <button type="submit">Upload Work</button>
+            </form>
+        </div>
+        {% endif %}
+
+        {% if current_user.role == 'supervisor' %}
+        <div class="card">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                <h3 style="margin: 0;">👥 My Assigned Students</h3>
+                <div class="notification-container">
+                    <a href="{{ url_for('chat') }}" title="Open Chat Hub" style="text-decoration: none; font-size: 1.5rem; background: #f1f5f9; padding: 5px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">💬 Chat Hub</a>
+                    {% set total_unread = unread_map.values()|sum %}
+                    <span id="hub-badge" class="badge" style="top: -10px; right: -5px; display: {% if total_unread > 0 %}block{% else %}none{% endif %};">
+                        {{ total_unread if total_unread <= 99 else '99+' }}
+                    </span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                {% for student in my_students %}
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; flex: 1; min-width: 200px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <strong>{{ student.full_name }}</strong><br>
+                            <small style="color: #64748b;">ID: {{ student.username }}</small>
+                        </div>
+                        <div class="notification-container">
+                            <a href="{{ url_for('chat', recipient_id=student.id) }}" style="text-decoration:none; font-size:1.2rem;">💬</a>
+                            {% set s_unread = unread_map.get(student.id, 0) %}
+                            <span id="badge-{{ student.id }}" class="badge" style="top: -8px; right: -8px; display: {% if s_unread > 0 %}block{% else %}none{% endif %};">
+                                {{ s_unread }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <h3>📊 Recent Activity & Submissions</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            {% if current_user.role == 'supervisor' %}<th>Student</th>{% endif %}
+                            <th>Project Details</th>
+                            <th>Status & Feedback</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if current_user.role == 'supervisor' %}
+                            {% for proj, student in assigned_data %}
+                            <tr>
+                                <td><strong>{{ student.full_name }}</strong></td>
+                                <td>{{ proj.title }}<br><small>{{ proj.chapter }}</small></td>
+                                <td>
+                                    <span class="status-pill {{ proj.status.lower().replace(' ', '-') }}">{{ proj.status }}</span>
+                                    {% if proj.comment %}<p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Note: {{ proj.comment }}</p>{% endif %}
+                                </td>
+                                <td>{{ proj.timestamp|datetimeformat }}</td>
+                                <td>
+                                    <div class="action-flex">
+                                        <a href="{{ url_for('view_file', filename=proj.file_path) }}" target="_blank" class="btn-view" style="padding: 6px 12px; text-decoration: none; background: #64748b; color: white; border-radius: 4px; font-size: 0.85rem;">View</a>
+
+                                        <form action="{{ url_for('review_project') }}" method="POST" style="display: flex; gap: 5px; margin: 0;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="project_id" value="{{ proj.id }}">
+                                            <input type="text" name="comment" placeholder="Feedback" class="compact-input">
+                                            <button type="submit" name="status" value="Approved" style="background: #10b981; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Accept</button>
+                                            <button type="submit" name="status" value="Correction Needed" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Reject</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            {% for p in projects %}
+                            <tr>
+                                <td>{{ p.title }}<br><small>{{ p.chapter }}</small></td>
+                                <td><span class="status-pill {{ p.status.lower().replace(' ', '-') }}">{{ p.status }}</span></td>
+                                <td>{{ p.timestamp|datetimeformat }}</td>
+                                <td>
+                                    <a href="{{ url_for('view_file', filename=p.file_path) }}" target="_blank" class="btn-view" style="padding: 6px 12px; text-decoration: none; background: #64748b; color: white; border-radius: 4px; font-size: 0.85rem; display: inline-block;">View</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

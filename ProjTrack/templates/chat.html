@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProjTrack Chat | Messaging</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .chat-container {
+            display: flex;
+            height: 80vh;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        /* Sidebar for Supervisor */
+        .chat-sidebar {
+            width: 30%;
+            border-right: 1px solid #e2e8f0;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: #1e293b;
+            color: white;
+            font-weight: bold;
+        }
+
+        .student-list {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .student-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: 0.2s;
+            display: block;
+            text-decoration: none;
+            color: #334155;
+        }
+
+        .student-item:hover { background: #f1f5f9; }
+        .student-item.active { background: #e2e8f0; border-left: 4px solid #3b82f6; }
+
+        /* Main Chat Area */
+        .chat-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: #efe7dd;
+        }
+
+        .chat-header {
+            padding: 15px 25px;
+            background: #f0f2f5;
+            border-bottom: 1px solid #d1d7db;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-window {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Message Bubbles */
+        .message {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.92rem;
+            position: relative;
+            line-height: 1.4;
+            transition: all 0.3s ease;
+        }
+
+        .sent {
+            align-self: flex-end;
+            background: #dcf8c6;
+            border-bottom-right-radius: 2px;
+        }
+
+        .received {
+            align-self: flex-start;
+            background: white;
+            border-bottom-left-radius: 2px;
+        }
+
+        /* Message Actions (Edit/Delete) */
+        .msg-actions {
+            display: none;
+            position: absolute;
+            top: -25px;
+            right: 0;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 8px;
+            border-radius: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .sent:hover .msg-actions {
+            display: flex;
+        }
+
+        .action-icon {
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .action-icon:hover { color: #1e293b; }
+        .delete-btn:hover { color: #ef4444; }
+
+        .msg-content { word-wrap: break-word; }
+
+        .msg-info {
+            font-size: 0.65rem;
+            color: #64748b;
+            display: flex;
+            justify-content: flex-end;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 15px 20px;
+            background: #f0f2f5;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex-grow: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .btn-send {
+            background: #075e54;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Edit Overlay */
+        #edit-mode-bar {
+            display: none;
+            background: #e2e8f0;
+            padding: 5px 20px;
+            font-size: 0.8rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .no-chat {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #64748b;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <span>PROJTRACK CHAT HUB</span>
+        <div>
+            <a href="/dashboard" style="color: white; text-decoration: none; margin-right: 20px;">Back to Dashboard</a>
+            <a href="/logout" class="btn-logout">Sign Out</a>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px; margin: 0 auto;">
+        <div class="chat-container">
+
+            {% if current_user.role == 'supervisor' %}
+            <div class="chat-sidebar">
+                <div class="sidebar-header">Assigned Students</div>
+                <div class="student-list">
+                    {% for student in my_students %}
+                    <a href="{{ url_for('chat', recipient_id=student.id) }}"
+                       class="student-item {% if recipient and recipient.id == student.id %}active{% endif %}">
+                        <strong>{{ student.full_name }}</strong>
+                        <div style="font-size: 0.75rem; color: #64748b;">Click to view messages</div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="chat-main">
+                {% if recipient %}
+                <div class="chat-header">
+                    <strong>{{ recipient.full_name }}</strong>
+                    <span style="font-size: 0.8rem; color: #64748b;">{{ recipient.role|capitalize }}</span>
+                </div>
+
+                <div class="chat-window" id="chatWindow">
+                    {% for msg in messages %}
+                    <div class="message {% if msg.sender_id == current_user.id %}sent{% else %}received{% endif %}" id="msg-{{ msg.id }}">
+
+                        {% if msg.sender_id == current_user.id %}
+                        <div class="msg-actions">
+                            <i class="fas fa-pen action-icon" onclick="prepareEdit('{{ msg.id }}', this)"></i>
+                            <i class="fas fa-trash action-icon delete-btn" onclick="deleteMessage('{{ msg.id }}')"></i>
+                        </div>
+                        {% endif %}
+
+                        <div class="msg-content">{{ msg.content }}</div>
+
+                        <div class="msg-info">
+                            {% if msg.is_edited %}<span style="font-style: italic;">(edited)</span>{% endif %}
+                            <span class="msg-time">{{ msg.timestamp.strftime('%H:%M') }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div id="edit-mode-bar">
+                    <span>Editing message...</span>
+                    <button onclick="cancelEdit()" style="border:none; background:transparent; color:red; cursor:pointer;">Cancel</button>
+                </div>
+
+                <form class="chat-input-area" id="chat-form">
+                    <input type="text" id="message-input" placeholder="Type a message..." required autocomplete="off">
+                    <button type="submit" class="btn-send" id="send-btn">Send</button>
+                </form>
+                {% else %}
+                <div class="no-chat">
+                    <h2 style="font-size: 3rem;">💬</h2>
+                    <p>Select a contact to start messaging</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const chatWindow = document.getElementById('chatWindow');
+        const messageInput = document.getElementById('message-input');
+        const editBar = document.getElementById('edit-mode-bar');
+        const sendBtn = document.getElementById('send-btn');
+
+        const currentUserId = "{{ current_user.id }}";
+        const recipientId = "{{ recipient.id if recipient else '' }}";
+
+        let editingMessageId = null;
+
+        if (chatWindow) chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        socket.emit('join', {});
+
+        // --- RECEIVE NEW MESSAGE ---
+        socket.on('receive_message', function(data) {
+            if (chatWindow) {
+                const isMe = data.sender_id == currentUserId;
+                const div = document.createElement('div');
+                div.id = `msg-${data.id}`;
+                div.className = `message ${isMe ? 'sent' : 'received'}`;
+
+                if (isMe) {
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'msg-actions';
+                    actionsDiv.innerHTML = `
+                        <i class="fas fa-pen action-icon" onclick="prepareEdit('${data.id}', this)"></i>
+                        <i class="fas fa-trash action-icon delete-btn" onclick="deleteMessage('${data.id}')"></i>`;
+                    div.appendChild(actionsDiv);
+                }
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'msg-content';
+                contentDiv.textContent = data.content; // textContent, never innerHTML, for user-supplied text
+                div.appendChild(contentDiv);
+
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'msg-info';
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'msg-time';
+                timeSpan.textContent = data.timestamp;
+                infoDiv.appendChild(timeSpan);
+                div.appendChild(infoDiv);
+
+                chatWindow.appendChild(div);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+        });
+
+        // --- RECEIVE EDIT UPDATE ---
+        socket.on('message_edited', function(data) {
+            const msgDiv = document.getElementById(`msg-${data.id}`);
+            if (msgDiv) {
+                const contentDiv = msgDiv.querySelector('.msg-content');
+                const infoDiv = msgDiv.querySelector('.msg-info');
+                contentDiv.textContent = data.new_content;
+                if (!infoDiv.querySelector('.edited-label')) {
+                    const editedSpan = document.createElement('span');
+                    editedSpan.className = 'edited-label';
+                    editedSpan.style.fontStyle = 'italic';
+                    editedSpan.textContent = '(edited)';
+                    infoDiv.insertBefore(editedSpan, infoDiv.firstChild);
+                }
+            }
+        });
+
+        // --- RECEIVE DELETE UPDATE ---
+        socket.on('message_deleted', function(data) {
+            const msgDiv = document.getElementById(`msg-${data.id}`);
+            if (msgDiv) msgDiv.remove();
+        });
+
+        // --- SEND OR EDIT ACTION ---
+        document.getElementById('chat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            if (editingMessageId) {
+                socket.emit('edit_message', { message_id: editingMessageId, new_content: text });
+                cancelEdit();
+            } else {
+                socket.emit('send_message', { recipient_id: recipientId, message: text });
+            }
+            messageInput.value = '';
+        });
+
+        // --- HELPER FUNCTIONS ---
+        function prepareEdit(id, iconEl) {
+            const msgDiv = iconEl.closest('.message');
+            const content = msgDiv.querySelector('.msg-content').textContent;
+            editingMessageId = id;
+            messageInput.value = content;
+            editBar.style.display = 'flex';
+            sendBtn.innerText = 'Update';
+            messageInput.focus();
+        }
+
+        function cancelEdit() {
+            editingMessageId = null;
+            messageInput.value = '';
+            editBar.style.display = 'none';
+            sendBtn.innerText = 'Send';
+        }
+
+        function deleteMessage(id) {
+            if (confirm("Delete this message?")) {
+                socket.emit('delete_message', { message_id: id });
+            }
+        }
+    </script>
+</body>
+</html>

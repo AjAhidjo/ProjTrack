@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Admin Panel | ProjTrack</title>
+    <style>
+        /* Modern Button & Table Styling */
+        .admin-card {
+            background: white; border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 25px; margin-bottom: 25px;
+        }
+        .user-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .user-table th {
+            text-align: left; padding: 12px; border-bottom: 2px solid #f1f5f9;
+            color: #64748b; font-size: 0.8rem; text-transform: uppercase;
+        }
+        .user-table td { padding: 15px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+
+        /* Badges */
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .bg-admin { background: #fef3c7; color: #92400e; }
+        .bg-student { background: #dbeafe; color: #1e40af; }
+        .bg-supervisor { background: #dcfce7; color: #166534; }
+
+        /* Action Buttons */
+        .btn-assign { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-assign:hover { background: #2563eb; }
+
+        .btn-delete {
+    color: red;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: 0.2s;
+    border: 1px solid red; /* Added a thin border to make it look like a button */
+}
+
+.btn-delete:hover {
+    background: red;
+    color: white; /* This makes the text white on hover */
+}
+        .active-label { color: #94a3b8; font-size: 0.8rem; font-style: italic; }
+
+        select, input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; width: 100%; }
+    </style>
+</head>
+<body style="background: #f1f5f9; padding: 20px;">
+
+    <nav style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 15px 30px; border-radius: 10px; color: white; margin-bottom: 30px;">
+        <span style="font-weight: bold; letter-spacing: 1px;">PROJTRACK ADMIN</span>
+        <div>
+            <a href="{{ url_for('change_password') }}" style="color: #cbd5e1; text-decoration: none; font-size: 0.85rem; margin-right: 20px;">Change Password</a>
+            <a href="{{ url_for('logout') }}" style="background: #ef4444; color: white; padding: 8px 15px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">Sign Out</a>
+        </div>
+    </nav>
+
+    <div class="admin-card">
+        <h3 style="margin-top:0;">🔗 Supervisor Assignment</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Link a student to a supervisor to enable project submissions.</p>
+        <form action="{{ url_for('assign_supervisor') }}" method="POST" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: end;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div>
+                <label style="display:block; font-size: 0.8rem; font-weight: bold; color: #64748b; margin-bottom: 5px;">STUDENT</label>
+                <select name="student_id" required>
+                    <option value="" disabled selected>-- Select Student --</option>
+                    {% for s in students %}
+                        <option value="{{ s.id }}">{{ s.full_name }} ({{ s.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display:block; font-size: 0.8rem; font-weight: bold; color: #64748b; margin-bottom: 5px;">SUPERVISOR</label>
+                <select name="supervisor_id" required>
+                    <option value="" disabled selected>-- Select Supervisor --</option>
+                    {% for sup in supervisors %}
+                        <option value="{{ sup.id }}">{{ sup.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn-assign">Assign Link</button>
+        </form>
+    </div>
+
+    <div class="admin-card">
+        <h3 style="margin-top: 0;">👥 All Registered Users</h3>
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>Username / Matric</th>
+                    <th>Allocation Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in all_users %}
+                <tr>
+                    <td><strong>{{ user.full_name }}</strong></td>
+                    <td>
+                        <span class="badge {% if user.role == 'admin' %}bg-admin{% elif user.role == 'student' %}bg-student{% else %}bg-supervisor{% endif %}">
+                            {{ user.role }}
+                        </span>
+                    </td>
+                    <td>{{ user.username }}</td>
+                    <td>
+                        {% if user.role == 'student' %}
+                            {% if user.supervisor_id %}
+                                <span style="color: #10b981; font-weight: 600;">✅ Assigned</span>
+                            {% else %}
+                                <span style="color: #64748b;">Pending</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="active-label">System User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.role == 'admin' %}
+                            <span class="active-label">Active Session</span>
+                        {% else %}
+                            <form action="{{ url_for('delete_user', id=user.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this user?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn-delete" style="background:none; cursor:pointer; font-size: inherit; font-family: inherit;">Delete</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
