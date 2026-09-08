@@ -608,7 +608,7 @@ if __name__ == '__main__':
     # DEBUG=1 (default) for local development — auto-reload, detailed error pages.
     # Set DEBUG=0 in your production environment; debug mode must never run on a public server.
     debug_mode = os.environ.get('DEBUG', '1') == '1'
-    host = os.environ.get('HOST', '127.0.0.1')
+    host = os.environ.get('HOST', '0.0.0.0')
     port = int(os.environ.get('PORT', 5000))
 
     if not debug_mode and app.config['SECRET_KEY'] == 'dev-only-fallback-key-change-me':
