@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumbi Tug of War: Mathematics</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #0f172a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        /* Outer Frame / Window Container */
+        .window-frame {
+            width: 1050px;
+            max-width: 100%;
+            height: 640px;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        /* Top Bar with Timer */
+        .top-bar {
+            height: 52px;
+            background-color: #ffffff;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+
+        .timer-badge {
+            background-color: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            border-radius: 20px;
+            padding: 4px 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            color: #1e293b;
+            font-size: 18px;
+        }
+
+        .timer-badge svg {
+            width: 20px;
+            height: 20px;
+            fill: #475569;
+        }
+
+        /* Three Main Column Cards Layout */
+        .main-layout {
+            flex: 1;
+            display: flex;
+            padding: 16px;
+            gap: 16px;
+            background-color: #f8fafc;
+        }
+
+        /* Player Cards (Left & Right) */
+        .team-card {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            position: relative;
+            border-top: 6px solid transparent;
+        }
+
+        .team-card.blue {
+            border-top-color: #2563eb;
+        }
+
+        .team-card.red {
+            border-top-color: #dc2626;
+        }
+
+        /* Player Card Header */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #2563eb;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .team-card.red .card-header {
+            background-color: #dc2626;
+        }
+
+        .team-card .score-badge {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        /* Question Box */
+        .question-box {
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+
+        /* Keypad Grid */
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            flex: 1;
+        }
+
+        .key-btn {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 22px;
+            font-weight: 700;
+            color: #334155;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.05s ease;
+            box-shadow: 0 3px 0 #cbd5e1;
+        }
+
+        .key-btn:active {
+            transform: translateY(3px);
+            box-shadow: none;
+            background-color: #f1f5f9;
+        }
+
+        .key-btn.action-clear {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+            box-shadow: 0 3px 0 #fca5a5;
+        }
+
+        .key-btn.action-submit {
+            background-color: #dcfce7;
+            color: #16a34a;
+            border-color: #86efac;
+            box-shadow: 0 3px 0 #86efac;
+        }
+
+        /* Center Canvas Arena */
+        .center-card {
+            flex: 1.4;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .center-header {
+            text-align: center;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #64748b;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        /* Canvas Arena Container */
+        .arena-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Custom Settings Panel */
+        .settings-panel {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-group label {
+            font-size: 15px;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .setting-group select {
+            padding: 10px 18px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1e293b;
+            background-color: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .setting-group select:hover {
+            border-color: #2563eb;
+        }
+
+        /* Fullscreen Overlay Screens */
+        .overlay-screen {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .countdown-text {
+            font-size: 120px;
+            font-weight: 900;
+            color: #1e293b;
+            animation: popIn 0.5s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .start-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 16px 48px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+            transition: all 0.2s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            background: #1d4ed8;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="window-frame">
+        <!-- Top Bar with Timer -->
+        <div class="top-bar">
+            <div class="timer-badge">
+                <svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm0 2C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm1-10h3a1 1 0 1 0 0-2h-4a1 1 0 0 0-1 1v5a1 1 0 1 0 2 0v-4z"/></svg>
+                <span id="timer-display">01:00</span>
+            </div>
+        </div>
+
+        <!-- Main Split Screen -->
+        <div class="main-layout">
+            
+            <!-- Team 1 (Blue) -->
+            <div class="team-card blue" id="card-p1">
+                <div class="card-header">
+                    <span>Team 1</span>
+                    <span class="score-badge" id="p1-score">0</span>
+                </div>
+                <div class="question-box">
+                    <span id="p1-math-expr">2 × 9 = ?</span>
+                    <div style="font-size: 22px; color: #2563eb; margin-top: 4px;" id="p1-input-val">&nbsp;</div>
+                </div>
+                <div class="keypad-grid" id="p1-keypad">
+                    <button class="key-btn" onclick="pressKey(1, '1')">1</button>
+                    <button class="key-btn" onclick="pressKey(1, '2')">2</button>
+                    <button class="key-btn" onclick="pressKey(1, '3')">3</button>
+                    <button class="key-btn" onclick="pressKey(1, '4')">4</button>
+                    <button class="key-btn" onclick="pressKey(1, '5')">5</button>
+                    <button class="key-btn" onclick="pressKey(1, '6')">6</button>
+                    <button class="key-btn" onclick="pressKey(1, '7')">7</button>
+                    <button class="key-btn" onclick="pressKey(1, '8')">8</button>
+                    <button class="key-btn" onclick="pressKey(1, '9')">9</button>
+                    <button class="key-btn action-clear" onclick="pressKey(1, 'C')">✕</button>
+                    <button class="key-btn" onclick="pressKey(1, '0')">0</button>
+                    <button class="key-btn action-submit" onclick="pressKey(1, 'OK')">✓</button>
+                </div>
+            </div>
+
+            <!-- Center Arena (HTML5 Canvas Rendered Characters) -->
+            <div class="center-card">
+                <div class="center-header">LUMBI TUG OF WAR: MATHEMATICS</div>
+                <div class="arena-container">
+                    <canvas id="gameCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Team 2 (Red) -->
+            <div class="team-card red" id="card-p2">
+                <div class="card-header">
+                    <span>Team 2</span>
+                    <span class="score-badge" id="p2-score">0</span>
+                </div>
+                <div class="question-box">
+                    <span id="p2-math-expr">2 × 7 = ?</span>
+                    <div style="font-size: 22px; color: #dc2626; margin-top: 4px;" id="p2-input-val">&nbsp;</div>
+                </div>
+                <div class="keypad-grid" id="p2-keypad">
+                    <button class="key-btn" onclick="pressKey(2, '1')">1</button>
+                    <button class="key-btn" onclick="pressKey(2, '2')">2</button>
+                    <button class="key-btn" onclick="pressKey(2, '3')">3</button>
+                    <button class="key-btn" onclick="pressKey(2, '4')">4</button>
+                    <button class="key-btn" onclick="pressKey(2, '5')">5</button>
+                    <button class="key-btn" onclick="pressKey(2, '6')">6</button>
+                    <button class="key-btn" onclick="pressKey(2, '7')">7</button>
+                    <button class="key-btn" onclick="pressKey(2, '8')">8</button>
+                    <button class="key-btn" onclick="pressKey(2, '9')">9</button>
+                    <button class="key-btn action-clear" onclick="pressKey(2, 'C')">✕</button>
+                    <button class="key-btn" onclick="pressKey(2, '0')">0</button>
+                    <button class="key-btn action-submit" onclick="pressKey(2, 'OK')">✓</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Overlay for Start / Setup / Game Over -->
+        <div class="overlay-screen" id="overlay">
+            <h1 style="font-size: 36px; color: #1e293b; margin-bottom: 20px;" id="overlay-title">LUMBI TUG OF WAR: MATHEMATICS</h1>
+            
+            <div class="settings-panel" id="settings-panel">
+                <!-- Operator Selection -->
+                <div class="setting-group">
+                    <label for="custom-operator-select">Operation Mode:</label>
+                    <select id="custom-operator-select">
+                        <option value="multiplication" selected>Multiplication (×)</option>
+                        <option value="addition">Addition (+)</option>
+                        <option value="subtraction">Subtraction (−)</option>
+                        <option value="division">Division (÷)</option>
+                        <option value="mixed">Mixed All (+, −, ×, ÷)</option>
+                    </select>
+                </div>
+
+                <!-- Game Duration Selection -->
+                <div class="setting-group">
+                    <label for="custom-time-select">Duration:</label>
+                    <select id="custom-time-select" onchange="updateTimerPreview()">
+                        <option value="30">30 Seconds</option>
+                        <option value="60" selected>1 Minute (60s)</option>
+                        <option value="120">2 Minutes (120s)</option>
+                        <option value="180">3 Minutes (180s)</option>
+                        <option value="300">5 Minutes (300s)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="start-btn" id="start-btn" onclick="startSequence()">START GAME</button>
+        </div>
+    </div>
+
+    <script>
+        // Game Engine Variables
+        let p1Score = 0;
+        let p2Score = 0;
+        let p1Input = "";
+        let p2Input = "";
+        let p1Answer = 0;
+        let p2Answer = 0;
+        
+        let ropeOffset = 0; // Negative = Left (Blue), Positive = Right (Red)
+        let targetRopeOffset = 0;
+        const STEP_DISTANCE = 25; // Shift pixels per correct math answer
+        const WIN_THRESHOLD = 140; // Max distance for KO
+
+        let selectedDuration = 60;
+        let selectedOperator = "multiplication";
+        let gameTimer = 60;
+        let timerInterval = null;
+        let isPlaying = false;
+
+        // DOM Elements
+        const p1ScoreEl = document.getElementById('p1-score');
+        const p2ScoreEl = document.getElementById('p2-score');
+        const p1ExprEl = document.getElementById('p1-math-expr');
+        const p2ExprEl = document.getElementById('p2-math-expr');
+        const p1InputEl = document.getElementById('p1-input-val');
+        const p2InputEl = document.getElementById('p2-input-val');
+        const timerEl = document.getElementById('timer-display');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const startBtn = document.getElementById('start-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const customTimeSelect = document.getElementById('custom-time-select');
+        const customOperatorSelect = document.getElementById('custom-operator-select');
+
+        // Canvas Rig & Rendering Engine Setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function updateTimerPreview() {
+            selectedDuration = parseInt(customTimeSelect.value);
+            const mins = String(Math.floor(selectedDuration / 60)).padStart(2, '0');
+            const secs = String(selectedDuration % 60).padStart(2, '0');
+            timerEl.textContent = `${mins}:${secs}`;
+        }
+
+        // Advanced Universal Math Generator supporting +, -, ×, ÷ & Mixed
+        function generateMathQuestion() {
+            let mode = selectedOperator;
+            if (mode === 'mixed') {
+                const modes = ['addition', 'subtraction', 'multiplication', 'division'];
+                mode = modes[Math.floor(Math.random() * modes.length)];
+            }
+
+            let num1, num2, text, ans;
+
+            switch (mode) {
+                case 'addition':
+                    num1 = Math.floor(Math.random() * 40) + 5;
+                    num2 = Math.floor(Math.random() * 40) + 5;
+                    text = `${num1} + ${num2} = ?`;
+                    ans = num1 + num2;
+                    break;
+
+                case 'subtraction':
+                    num1 = Math.floor(Math.random() * 50) + 10;
+                    num2 = Math.floor(Math.random() * num1) + 1; // Ensures positive answers
+                    text = `${num1} − ${num2} = ?`;
+                    ans = num1 - num2;
+                    break;
+
+                case 'division':
+                    num2 = Math.floor(Math.random() * 10) + 1; // Divisor (1 to 10)
+                    ans = Math.floor(Math.random() * 10) + 1;  // Integer Quotient
+                    num1 = num2 * ans;                          // Dividend
+                    text = `${num1} ÷ ${num2} = ?`;
+                    break;
+
+                case 'multiplication':
+                default:
+                    num1 = Math.floor(Math.random() * 10) + 1;
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                    text = `${num1} × ${num2} = ?`;
+                    ans = num1 * num2;
+                    break;
+            }
+
+            return { text, ans };
+        }
+
+        function loadNextQuestion(player) {
+            const q = generateMathQuestion();
+            if (player === 1) {
+                p1Answer = q.ans;
+                p1ExprEl.textContent = q.text;
+                p1Input = "";
+                p1InputEl.innerHTML = "&nbsp;";
+            } else {
+                p2Answer = q.ans;
+                p2ExprEl.textContent = q.text;
+                p2Input = "";
+                p2InputEl.innerHTML = "&nbsp;";
+            }
+        }
+
+        // Keypad Input Logic
+        function pressKey(player, key) {
+            if (!isPlaying) return;
+
+            if (player === 1) {
+                if (key === 'C') {
+                    p1Input = "";
+                } else if (key === 'OK') {
+                    submitAnswer(1);
+                    return;
+                } else if (p1Input.length < 3) {
+                    p1Input += key;
+                }
+                p1InputEl.textContent = p1Input || "\u00A0";
+            } else {
+                if (key === 'C') {
+                    p2Input = "";
+                } else if (key === 'OK') {
+                    submitAnswer(2);
+                    return;
+                } else if (p2Input.length < 3) {
+                    p2Input += key;
+                }
+                p2InputEl.textContent = p2Input || "\u00A0";
+            }
+        }
+
+        // Evaluate Math Answers
+        function submitAnswer(player) {
+            if (player === 1) {
+                if (parseInt(p1Input) === p1Answer) {
+                    p1Score++;
+                    p1ScoreEl.textContent = p1Score;
+                    pullRope(-STEP_DISTANCE);
+                }
+                loadNextQuestion(1);
+            } else {
+                if (parseInt(p2Input) === p2Answer) {
+                    p2Score++;
+                    p2ScoreEl.textContent = p2Score;
+                    pullRope(STEP_DISTANCE);
+                }
+                loadNextQuestion(2);
+            }
+        }
+
+        // Update Rope Target Offset
+        function pullRope(delta) {
+            targetRopeOffset += delta;
+            
+            if (targetRopeOffset <= -WIN_THRESHOLD) {
+                endGame("TEAM 1 (BLUE) WINS!");
+            } else if (targetRopeOffset >= WIN_THRESHOLD) {
+                endGame("TEAM 2 (RED) WINS!");
+            }
+        }
+
+        // --- REALISTIC CHARACTER DRAWING ENGINE ---
+        let animFrame = 0;
+
+        function drawHumanoid(ctx, x, y, isRedTeam, pullPhase) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            const direction = isRedTeam ? -1 : 1;
+            ctx.scale(direction, 1);
+
+            const leanAngle = -0.22 + Math.sin(pullPhase) * 0.05;
+            const legPhase = Math.sin(pullPhase) * 4;
+
+            const shirtColor = isRedTeam ? "#dc2626" : "#2563eb";
+            const skinColor = "#f87171";
+            const skinDark = "#ef4444";
+            const pantsColor = "#1e293b";
+            const shoeColor = "#0f172a";
+
+            // Shadow
+            ctx.fillStyle = "rgba(15, 23, 42, 0.15)";
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 22, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.rotate(leanAngle);
+
+            // Back Leg
+            ctx.strokeStyle = pantsColor;
+            ctx.lineWidth = 10;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(-6, -38);
+            ctx.lineTo(-20 - legPhase, -18);
+            ctx.lineTo(-28 - legPhase, 0);
+            ctx.stroke();
+
+            // Back Shoe
+            ctx.fillStyle = shoeColor;
+            ctx.beginPath();
+            ctx.arc(-28 - legPhase, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Front Leg
+            ctx.beginPath();
+            ctx.moveTo(6, -38);
+            ctx.lineTo(8 + legPhase, -18);
+            ctx.lineTo(2 + legPhase, 0);
+            ctx.stroke();
+
+            // Front Shoe
+            ctx.fillStyle = shoeColor;
+            ctx.beginPath();
+            ctx.arc(2 + legPhase, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Torso
+            ctx.fillStyle = shirtColor;
+            ctx.beginPath();
+            ctx.roundRect(-12, -72, 24, 36, 6);
+            ctx.fill();
+
+            // Head & Neck
+            ctx.fillStyle = skinColor;
+            ctx.fillRect(-3, -78, 6, 8);
+            ctx.beginPath();
+            ctx.arc(0, -88, 11, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hair
+            ctx.fillStyle = "#0f172a";
+            ctx.beginPath();
+            ctx.arc(0, -90, 11, Math.PI, Math.PI * 2);
+            ctx.fill();
+
+            // Arms
+            ctx.strokeStyle = skinColor;
+            ctx.lineWidth = 7;
+            
+            // Back Arm
+            ctx.beginPath();
+            ctx.moveTo(-6, -66);
+            ctx.lineTo(8, -50);
+            ctx.lineTo(22, -42);
+            ctx.stroke();
+
+            // Front Arm
+            ctx.strokeStyle = skinDark;
+            ctx.beginPath();
+            ctx.moveTo(4, -66);
+            ctx.lineTo(18, -50);
+            ctx.lineTo(28, -42);
+            ctx.stroke();
+
+            // Hands (Grip)
+            ctx.fillStyle = skinColor;
+            ctx.beginPath();
+            ctx.arc(26, -42, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function renderArena() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ropeOffset += (targetRopeOffset - ropeOffset) * 0.1;
+            animFrame += 0.08;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const groundY = h - 30;
+            const ropeY = groundY - 42;
+            const centerX = w / 2 + ropeOffset;
+
+            // Ground & Field Lines
+            ctx.fillStyle = "#cbd5e1";
+            ctx.fillRect(0, groundY, w, 30);
+            ctx.fillStyle = "#94a3b8";
+            ctx.fillRect(0, groundY, w, 3);
+
+            // Center Boundary Dotted Marker
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(w / 2, 0);
+            ctx.lineTo(w / 2, groundY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Rope
+            ctx.strokeStyle = "#b45309";
+            ctx.lineWidth = 8;
+            ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(0, ropeY);
+            ctx.lineTo(w, ropeY);
+            ctx.stroke();
+
+            // Center Red Ribbon Marker
+            ctx.fillStyle = "#dc2626";
+            ctx.fillRect(centerX - 4, ropeY - 10, 8, 20);
+
+            // Draw Blue Team
+            drawHumanoid(ctx, centerX - 60, groundY, false, animFrame);
+            drawHumanoid(ctx, centerX - 110, groundY, false, animFrame + 0.5);
+
+            // Draw Red Team
+            drawHumanoid(ctx, centerX + 60, groundY, true, animFrame + 0.2);
+            drawHumanoid(ctx, centerX + 110, groundY, true, animFrame + 0.7);
+
+            requestAnimationFrame(renderArena);
+        }
+
+        // Start Canvas Loop
+        renderArena();
+
+        // Countdown & Handlers
+        function startSequence() {
+            startBtn.classList.add('hidden');
+            settingsPanel.classList.add('hidden');
+            
+            let count = 3;
+            overlayTitle.className = "countdown-text";
+            overlayTitle.textContent = count;
+
+            const countInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    overlayTitle.textContent = count;
+                } else if (count === 0) {
+                    overlayTitle.textContent = "GO!";
+                } else {
+                    clearInterval(countInterval);
+                    overlay.classList.add('hidden');
+                    runGame();
+                }
+            }, 800);
+        }
+
+        function runGame() {
+            isPlaying = true;
+            ropeOffset = 0;
+            targetRopeOffset = 0;
+            p1Score = 0;
+            p2Score = 0;
+            
+            selectedDuration = parseInt(customTimeSelect.value);
+            selectedOperator = customOperatorSelect.value;
+            gameTimer = selectedDuration;
+
+            p1ScoreEl.textContent = "0";
+            p2ScoreEl.textContent = "0";
+
+            loadNextQuestion(1);
+            loadNextQuestion(2);
+
+            timerInterval = setInterval(() => {
+                gameTimer--;
+                const mins = String(Math.floor(gameTimer / 60)).padStart(2, '0');
+                const secs = String(gameTimer % 60).padStart(2, '0');
+                timerEl.textContent = `${mins}:${secs}`;
+
+                if (gameTimer <= 0) {
+                    clearInterval(timerInterval);
+                    if (targetRopeOffset < 0) endGame("TEAM 1 WINS!");
+                    else if (targetRopeOffset > 0) endGame("TEAM 2 WINS!");
+                    else endGame("IT'S A DRAW!");
+                }
+            }, 1000);
+        }
+
+        function endGame(msg) {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            overlayTitle.className = "";
+            overlayTitle.style.fontSize = "36px";
+            overlayTitle.textContent = msg;
+            
+            settingsPanel.classList.remove('hidden');
+            startBtn.textContent = "PLAY AGAIN";
+            startBtn.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+        }
+
+        // Initial setup
+        updateTimerPreview();
+    </script>
+</body>
+</html>
