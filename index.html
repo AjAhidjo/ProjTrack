@@ -12,6 +12,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: manipulation;
         }
 
         body {
@@ -158,6 +159,7 @@
             align-items: center;
             transition: all 0.05s ease;
             box-shadow: 0 3px 0 #cbd5e1;
+            touch-action: manipulation;
         }
 
         .key-btn:active {
@@ -325,18 +327,18 @@
                     <div style="font-size: 22px; color: #2563eb; margin-top: 4px;" id="p1-input-val">&nbsp;</div>
                 </div>
                 <div class="keypad-grid" id="p1-keypad">
-                    <button class="key-btn" onclick="pressKey(1, '1')">1</button>
-                    <button class="key-btn" onclick="pressKey(1, '2')">2</button>
-                    <button class="key-btn" onclick="pressKey(1, '3')">3</button>
-                    <button class="key-btn" onclick="pressKey(1, '4')">4</button>
-                    <button class="key-btn" onclick="pressKey(1, '5')">5</button>
-                    <button class="key-btn" onclick="pressKey(1, '6')">6</button>
-                    <button class="key-btn" onclick="pressKey(1, '7')">7</button>
-                    <button class="key-btn" onclick="pressKey(1, '8')">8</button>
-                    <button class="key-btn" onclick="pressKey(1, '9')">9</button>
-                    <button class="key-btn action-clear" onclick="pressKey(1, 'C')">✕</button>
-                    <button class="key-btn" onclick="pressKey(1, '0')">0</button>
-                    <button class="key-btn action-submit" onclick="pressKey(1, 'OK')">✓</button>
+                    <button class="key-btn" data-player="1" data-key="1">1</button>
+                    <button class="key-btn" data-player="1" data-key="2">2</button>
+                    <button class="key-btn" data-player="1" data-key="3">3</button>
+                    <button class="key-btn" data-player="1" data-key="4">4</button>
+                    <button class="key-btn" data-player="1" data-key="5">5</button>
+                    <button class="key-btn" data-player="1" data-key="6">6</button>
+                    <button class="key-btn" data-player="1" data-key="7">7</button>
+                    <button class="key-btn" data-player="1" data-key="8">8</button>
+                    <button class="key-btn" data-player="1" data-key="9">9</button>
+                    <button class="key-btn action-clear" data-player="1" data-key="C">✕</button>
+                    <button class="key-btn" data-player="1" data-key="0">0</button>
+                    <button class="key-btn action-submit" data-player="1" data-key="OK">✓</button>
                 </div>
             </div>
 
@@ -359,18 +361,18 @@
                     <div style="font-size: 22px; color: #dc2626; margin-top: 4px;" id="p2-input-val">&nbsp;</div>
                 </div>
                 <div class="keypad-grid" id="p2-keypad">
-                    <button class="key-btn" onclick="pressKey(2, '1')">1</button>
-                    <button class="key-btn" onclick="pressKey(2, '2')">2</button>
-                    <button class="key-btn" onclick="pressKey(2, '3')">3</button>
-                    <button class="key-btn" onclick="pressKey(2, '4')">4</button>
-                    <button class="key-btn" onclick="pressKey(2, '5')">5</button>
-                    <button class="key-btn" onclick="pressKey(2, '6')">6</button>
-                    <button class="key-btn" onclick="pressKey(2, '7')">7</button>
-                    <button class="key-btn" onclick="pressKey(2, '8')">8</button>
-                    <button class="key-btn" onclick="pressKey(2, '9')">9</button>
-                    <button class="key-btn action-clear" onclick="pressKey(2, 'C')">✕</button>
-                    <button class="key-btn" onclick="pressKey(2, '0')">0</button>
-                    <button class="key-btn action-submit" onclick="pressKey(2, 'OK')">✓</button>
+                    <button class="key-btn" data-player="2" data-key="1">1</button>
+                    <button class="key-btn" data-player="2" data-key="2">2</button>
+                    <button class="key-btn" data-player="2" data-key="3">3</button>
+                    <button class="key-btn" data-player="2" data-key="4">4</button>
+                    <button class="key-btn" data-player="2" data-key="5">5</button>
+                    <button class="key-btn" data-player="2" data-key="6">6</button>
+                    <button class="key-btn" data-player="2" data-key="7">7</button>
+                    <button class="key-btn" data-player="2" data-key="8">8</button>
+                    <button class="key-btn" data-player="2" data-key="9">9</button>
+                    <button class="key-btn action-clear" data-player="2" data-key="C">✕</button>
+                    <button class="key-btn" data-player="2" data-key="0">0</button>
+                    <button class="key-btn action-submit" data-player="2" data-key="OK">✓</button>
                 </div>
             </div>
 
@@ -548,6 +550,26 @@
                 p2InputEl.textContent = p2Input || "\u00A0";
             }
         }
+
+        // Attach Simultaneous Touch & Click Handlers to Keypads
+        document.querySelectorAll('.key-btn').forEach(btn => {
+            const handlePress = (e) => {
+                e.preventDefault();
+                const player = parseInt(btn.getAttribute('data-player'));
+                const key = btn.getAttribute('data-key');
+                pressKey(player, key);
+            };
+
+            btn.addEventListener('touchstart', handlePress, { passive: false });
+            btn.addEventListener('click', (e) => {
+                // Ignore mouse clicks synthesized from touch events
+                if (e.detail !== 0) {
+                    const player = parseInt(btn.getAttribute('data-player'));
+                    const key = btn.getAttribute('data-key');
+                    pressKey(player, key);
+                }
+            });
+        });
 
         // Evaluate Math Answers
         function submitAnswer(player) {
